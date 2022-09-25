@@ -1,5 +1,6 @@
 import os
 import re
+import html
 import textwrap
 
 import discord
@@ -44,9 +45,11 @@ class TachiBoti(discord.Client):
             (r"</?br/?>", "\n")
         ]
         for regex, regex_replace in replacements:
-            desc = re.sub(regex, regex_replace, desc, flags=re.I | re.M)
+            desc = html.unescape(re.sub(regex, regex_replace, desc, flags=re.I | re.M))
         footer = re.sub(r".*\.", "", str(media.format))
-        footer_text = footer.replace("TV", "ANIME").capitalize()
+        footer_text = footer.replace("TV", "ANIME").replace("_", " ").title()
+        if len(footer_text) <= 3:
+            footer_text = footer_text.upper()
         status = re.sub(r".*\.", "", str(media.status))
         status_text = status.replace("_", " ").capitalize()
 
@@ -86,6 +89,8 @@ class TachiBoti(discord.Client):
                 await message.channel.send(embed=embed)
 
     async def on_message(self, message):
+        if message.author.bot: # Ignore other bots messages
+            return
         if message.author == self.user:  # Ignore own messages
             return
         for media, regex in self.regex.items():
